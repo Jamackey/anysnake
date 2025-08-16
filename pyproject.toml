@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "anysnake"
-version = "0.1.0"
+dynamic = ["version"]
 description = "A python library to allow you to play snake on anything!"
 readme = "README.md"
 authors = [
@@ -31,3 +31,6 @@ dependencies = [
 
 [tool.hatch.envs.default.scripts]
 test = "pytest tests"
+
+[tool.hatch.version]
+path = "anysnake/__init__.py"
