@@ -19,6 +19,8 @@ def output(matrix):
     # Flush the cmd
     print('\n' * 50)
 
+    print('Use Esc to exit game')
+
     # Convert the matrix from numpy array to str where 0s are ' '
     matrix = matrix.astype(str)
     matrix[matrix == '0'] = ' '
@@ -27,5 +29,5 @@ def output(matrix):
     print(matrix)
 
 
-snake = SnakeGame(grid=(10, 10), interval=.5, start_len=2, callback=output)
+snake = SnakeGame(grid=(6, 6), interval=.5, start_len=2, callback=output)
 snake.start()
