@@ -133,6 +133,11 @@ class SnakeGame:
 
     def update_fruits(self):
         """Updates the fruits in the game"""
+        # If the snake eats it, make a new fruit
+        if (self.snake.x, self.snake.y) == self.fruit.coord:
+            self.snake.tail_len += 1
+            self.fruit.bool = False
+
         # Create fruit
         if self.fruit.bool is False:
             # Chose coord from list of empty spaces
@@ -143,12 +148,6 @@ class SnakeGame:
             rand_idx = np.random.choice(len(coords))
             self.fruit.coord = tuple(coords[rand_idx])
             self.fruit.bool = True
-
-        # If the snake eats it, make a new fruit
-        if (self.snake.x, self.snake.y) == self.fruit.coord:
-            self.snake.tail_len += 1
-            self.fruit.bool = False
-            return
 
         # Display fruit
         self.matrix[self.fruit.coord[0]][self.fruit.coord[1]] = 2
