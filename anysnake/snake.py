@@ -131,6 +131,25 @@ class SnakeGame:
         """Resets the grid to 0s"""
         return np.zeros(self.grid.grid, dtype=np.uint)
 
+    def get_matrix(self, flip_x=False, flip_y=False, rotate=False):
+        """
+        Get the snake matrix to display in your app.
+        This is done in the order flip X, Y and the rotate.
+
+        Args:
+            flip_x: Flips the X axis of the matrix
+            flip_y: Flips the Y axis of the matrix
+            rotate: Rotates the matrix by 90 degrees
+        """
+        temp_matrix = self.matrix
+        if flip_x:
+            temp_matrix = np.flipud(temp_matrix)
+        if flip_y:
+            temp_matrix = np.fliplr(temp_matrix)
+        if rotate:
+            temp_matrix = np.rot90(temp_matrix)
+        return temp_matrix
+
     def update_fruits(self):
         """Updates the fruits in the game"""
         # If the snake eats it, make a new fruit
