@@ -19,7 +19,6 @@ class Grid:
     max_x: int
     max_y: int
     grid: tuple
-    matrix: np.ndarray
 
 
 @dataclass
@@ -31,6 +30,13 @@ class Snake:
     old_dir: str
     tail: list
     tail_len: int
+
+
+@dataclass
+class Fruit:
+    """Fruit class"""
+    bool: bool
+    coord: tuple
 
 
 class SnakeGame:
@@ -59,8 +65,9 @@ class SnakeGame:
             max_x=grid[0],
             max_y=grid[1],
             grid=grid,
-            matrix=None
             )
+
+        self.matrix: np.ndarray = None
 
         # Create Snake
         self.snake = Snake(
@@ -73,66 +80,96 @@ class SnakeGame:
             )
 
         # Start fruits
-        self.fruit_bool = False
-        self.fruit_coord = (-1, -1)
+        self.fruit = Fruit(
+            bool=False,
+            coord=(-1, -1)
+        )
 
         # Running variables
         self.callback = callback
         self.update_interval = interval
         self.stop = False
+        self.snake_thread = Thread(target=self.update)
+        self.listener = keyboard.Listener(on_press=self.on_press,
+                                          on_release=self.on_release)
+        self.ctrl = False
 
     def start(self):
         """Starts the game and builds display and keyboard thread"""
         self.stop = False
 
-        display_thread = Thread(target=self.update)
-        display_thread.start()
+        self.snake_thread.start()
 
-        listner = keyboard.Listener(on_press=self.on_press,
-                                    on_release=self.on_release)
-        listner.start()
+        self.listener.start()
+
+    def join(self):
+        """Stops running of threads"""
+        self.stop = True
 
     def print_display(self):
         """Print the snakegame matrix and debug info to console"""
         print("\n" * 10)
-        for i in np.rot90(self.grid.matrix):
+        for i in np.rot90(self.matrix):
             print(i)
         print('Snake Head:', (self.snake.x, self.snake.y))
         print('Snake Tail:', self.snake.tail)
-        print('Fruit coord:', self.fruit_coord)
+        print('Fruit coord:', self.fruit.coord)
         print('New_dir:', self.snake.dir, '- Old_dir:', self.snake.old_dir)
 
     def update(self):
         """Main snake update loop"""
         while self.stop is False:
-            self.grid.matrix = self.get_empty_grid()
+            self.matrix = self.get_empty_grid()
             self.update_snake()
             self.update_fruits()
             # self.print_display()
-            self.callback(np.rot90(self.grid.matrix))
+            if self.callback is not None:
+                self.callback(np.rot90(self.matrix))
             time.sleep(self.update_interval)
 
     def get_empty_grid(self):
         """Resets the grid to 0s"""
         return np.zeros(self.grid.grid, dtype=np.uint)
 
+    def get_matrix(self, flip_x=False, flip_y=False, rotate=False):
+        """
+        Get the snake matrix to display in your app.
+        This is done in the order flip X, Y and the rotate.
+
+        Args:
+            flip_x: Flips the X axis of the matrix
+            flip_y: Flips the Y axis of the matrix
+            rotate: Rotates the matrix by 90 degrees
+        """
+        temp_matrix = self.matrix
+        if flip_x:
+            temp_matrix = np.flipud(temp_matrix)
+        if flip_y:
+            temp_matrix = np.fliplr(temp_matrix)
+        if rotate:
+            temp_matrix = np.rot90(temp_matrix)
+        return temp_matrix
+
     def update_fruits(self):
         """Updates the fruits in the game"""
-        # Create fruit
-        if self.fruit_bool is False:
-            coords = np.argwhere(self.grid.matrix == 0)
-            rand_idx = np.random.choice(len(coords))
-            self.fruit_coord = tuple(coords[rand_idx])
-            self.fruit_bool = True
-
         # If the snake eats it, make a new fruit
-        if (self.snake.x, self.snake.y) == self.fruit_coord:
+        if (self.snake.x, self.snake.y) == self.fruit.coord:
             self.snake.tail_len += 1
-            self.fruit_bool = False
-            return
+            self.fruit.bool = False
+
+        # Create fruit
+        if self.fruit.bool is False:
+            # Chose coord from list of empty spaces
+            coords = np.argwhere(self.matrix == 0)
+            if len(coords) == 0:  # If no spaces, game won
+                self.stop = True
+                return
+            rand_idx = np.random.choice(len(coords))
+            self.fruit.coord = tuple(coords[rand_idx])
+            self.fruit.bool = True
 
         # Display fruit
-        self.grid.matrix[self.fruit_coord[0]][self.fruit_coord[1]] = 2
+        self.matrix[self.fruit.coord[0]][self.fruit.coord[1]] = 2
 
     def update_snake(self):
         """Updates the snake and tail in the game"""
@@ -155,7 +192,7 @@ class SnakeGame:
 
         # If not moved yet, add snake head and return
         if self.snake.dir == '':
-            self.grid.matrix[self.snake.x][self.snake.y] = 1
+            self.matrix[self.snake.x][self.snake.y] = 1
             self.snake.tail = [(self.snake.x, self.snake.y)]
             return
 
@@ -169,7 +206,7 @@ class SnakeGame:
 
         # Add snake tail to matrix
         for tail_pixel in self.snake.tail:
-            self.grid.matrix[tail_pixel] = 1
+            self.matrix[tail_pixel] = 1
 
     def set_dir(self, direction):
         """Set the next snake direction"""
